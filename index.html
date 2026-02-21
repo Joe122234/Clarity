@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Gmail Auth Modal -->
+    <div id="gmail-auth-modal" class="auth-modal-overlay">
+        <div class="auth-modal">
+            <h2 style="font-family: 'Unbounded', sans-serif; margin-bottom: 8px;">Workspace Lock</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem;">Connect both Gmail accounts to
+                unlock.</p>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <button id="btn-connect-personal" class="auth-btn">Connect Personal Gmail</button>
+                <button id="btn-connect-school" class="auth-btn">Connect School Gmail</button>
+            </div>
+        </div>
+    </div>
+
+    <nav id="sidebar">
+        <h1>Clarity</h1>
+        <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#monthly-goals">Monthly Goals</a></li>
+            <li><a href="#weekly-planner">Weekly Planner</a></li>
+            <li><a href="#daily-execution">Daily Execution</a></li>
+            <li><a href="#analytics">Analytics</a></li>
+            <li><a href="#reflection">Reflection</a></li>
+        </ul>
+    </nav>
+
+    <div id="clock-container"
+        style="position: absolute; top: var(--spacing-lg); right: var(--spacing-lg); text-align: right; z-index: 100;">
+        <div id="live-clock"
+            style="font-family: 'Unbounded', sans-serif; font-size: 1.2rem; color: var(--text-color); letter-spacing: 0.05em; font-weight: 300;">
+        </div>
+        <div id="live-date"
+            style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+        </div>
+    </div>
+
+    <main id="main-content">
+        <!-- Main content area -->
+    </main>
+
+    <script src="config.js"></script>
+    <script src="storage.js"></script>
+    <script type="module" src="firebase-sync.js"></script>
+    <script src="gmail.js"></script>
+    <script src="notifications.js"></script>
+    <script src="ai.js"></script>
+    <script src="app.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+
+</html>

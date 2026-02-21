@@ -1,6 +1,6 @@
 // gmail.js - Gmail OAuth Integration
 
-const CLIENT_ID = window.CLARITY_CONFIG.GMAIL.CLIENT_ID;
+const CLIENT_ID = '723839532084-b1nh8v6rafia14ahcr7kushrlunj0t6d.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
 
 let tokenClient;

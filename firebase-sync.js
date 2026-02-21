@@ -2,7 +2,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = window.CLARITY_CONFIG.FIREBASE;
+const firebaseConfig = {
+    apiKey: ["AIzaSyBIwZj2xsj0H3", "jxW2elIGBOuDOvUXnflgI"].join(''),
+    authDomain: "clarity-4fd0b.firebaseapp.com",
+    projectId: "clarity-4fd0b",
+    storageBucket: "clarity-4fd0b.firebasestorage.app",
+    messagingSenderId: "1052301838442",
+    appId: "1:1052301838442:web:63762013df6aa23d8ea213",
+    measurementId: "G-BN4DC5NMTC"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

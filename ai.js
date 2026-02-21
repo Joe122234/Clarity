@@ -1,9 +1,19 @@
 // ai.js - Cerebras AI Integration
 
-const CEREBRAS_API_KEY = window.CLARITY_CONFIG.CEREBRAS.API_KEY;
+function getCerebrasKey() {
+    let key = localStorage.getItem('cerebras_api_key');
+    if (!key) {
+        key = prompt('Clarity AI: Please enter your Cerebras API Key to enable Email Intelligence (It will be saved securely to your browser area):');
+        if (key) localStorage.setItem('cerebras_api_key', key);
+    }
+    return key;
+}
 
 async function generateEmailIntelligence(emails) {
     if (!emails || emails.length === 0) return null;
+
+    const token = getCerebrasKey();
+    if (!token) return null;
 
     const systemPrompt = `You are an executive productivity intelligence assistant inside a personal LifeOS dashboard.
 
@@ -49,7 +59,7 @@ Return empty notifications array and today_focus as null.`;
         const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${CEREBRAS_API_KEY}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

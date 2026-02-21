@@ -4,8 +4,8 @@ const CLIENT_ID = '723839532084-b1nh8v6rafia14ahcr7kushrlunj0t6d.apps.googleuser
 const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
 
 let tokenClient;
-let personalToken = sessionStorage.getItem('personal_gmail_token');
-let schoolToken = sessionStorage.getItem('school_gmail_token');
+let personalToken = localStorage.getItem('personal_gmail_token');
+let schoolToken = localStorage.getItem('school_gmail_token');
 
 function initGmailGate() {
     if (personalToken && schoolToken) {
@@ -23,7 +23,7 @@ function initGoogleAuth() {
             callback: (tokenResponse) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     if (window.currentAuthTarget === 'personal') {
-                        sessionStorage.setItem('personal_gmail_token', tokenResponse.access_token);
+                        localStorage.setItem('personal_gmail_token', tokenResponse.access_token);
                         personalToken = tokenResponse.access_token;
                         const btn = document.getElementById('btn-connect-personal');
                         if (btn) {
@@ -31,7 +31,7 @@ function initGoogleAuth() {
                             btn.disabled = true;
                         }
                     } else if (window.currentAuthTarget === 'school') {
-                        sessionStorage.setItem('school_gmail_token', tokenResponse.access_token);
+                        localStorage.setItem('school_gmail_token', tokenResponse.access_token);
                         schoolToken = tokenResponse.access_token;
                         const btn = document.getElementById('btn-connect-school');
                         if (btn) {
@@ -161,8 +161,8 @@ async function fetchFullMessage(token, messageId, accountName) {
 }
 
 async function fetchAllRecentEmails() {
-    const pToken = sessionStorage.getItem('personal_gmail_token');
-    const sToken = sessionStorage.getItem('school_gmail_token');
+    const pToken = localStorage.getItem('personal_gmail_token');
+    const sToken = localStorage.getItem('school_gmail_token');
 
     if (!pToken || !sToken) {
         console.warn('Missing tokens. Both accounts required to fetch emails.');

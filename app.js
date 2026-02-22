@@ -105,9 +105,9 @@ function renderDashboard(container) {
     container.innerHTML = `
         <div style="padding-bottom: 24px;">
             <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 4px; font-weight: 500;">${getGreeting()}</p>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 2.2rem; margin: 0;">Dashboard</h2>
-                <div style="background-color: var(--card-color); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 20px; font-weight: 500; font-family: 'Unbounded', sans-serif; font-size: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <h2 style="font-size: 2.2rem; margin: 0; line-height: 1.2;">Dashboard</h2>
+                <div style="background-color: var(--card-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-weight: 500; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0;">
                     🔥 <span id="streak-value" style="margin-left: 6px;">0 Day Streak</span>
                 </div>
             </div>
@@ -418,11 +418,11 @@ function renderListItems(items, type, emptyMessage) {
             <div class="checkbox">
                 ${item.completed ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
             </div>
-            <span class="item-text" style="flex: 1; user-select: none;">${item.text}</span>
+            <span class="item-text" style="flex: 1; user-select: none; word-break: break-word; line-height: 1.4;">${item.text}</span>
             ${badgeHtml}
-            <div style="display: flex; gap: 8px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;" class="item-actions">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="cursor: grab;" class="drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-                <button onclick="deleteItem(event, '${type}', '${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; color: var(--text-muted); font-family: 'Montserrat', sans-serif;">Remove</button>
+                <button onclick="deleteItem(event, '${type}', '${item.id}')" class="remove-btn" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; border: none; color: var(--text-muted); font-family: 'Montserrat', sans-serif; cursor: pointer;"><span class="remove-text">Remove</span></button>
             </div>
         </div>
         `;

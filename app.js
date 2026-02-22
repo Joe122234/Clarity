@@ -27,6 +27,15 @@ document.addEventListener('firebaseDataChanged', () => {
 });
 
 function initApp() {
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+
+    if (mobileBtn && sidebar) {
+        mobileBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
+
     // Setup navigation listeners
     const navLinks = document.querySelectorAll('#sidebar a');
     navLinks.forEach(link => {
@@ -34,6 +43,11 @@ function initApp() {
             e.preventDefault();
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
+
+            if (sidebar && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+
             const targetId = e.currentTarget.getAttribute('href').substring(1);
             currentViewId = targetId;
             navigate(targetId);
@@ -75,12 +89,15 @@ function navigate(viewId) {
 // ---------------------------------------------------------
 
 function renderDashboard(container) {
-    const monthlyGoals = StorageManager.getMonthlyGoals();
+    const allMonthly = StorageManager.getMonthlyGoals();
+    const allDaily = StorageManager.getDailyTasks();
+
+    const monthlyGoals = allMonthly.filter(g => !g.archived);
     const topMonthly = monthlyGoals.slice(0, 3);
-    const weeklyGoals = StorageManager.getWeeklyGoals();
-    const dailyTasks = StorageManager.getDailyTasks();
+    const weeklyGoals = StorageManager.getWeeklyGoals().filter(g => !g.archived);
+    const dailyTasks = allDaily.filter(t => !t.archived);
     const todayTasks = [...dailyTasks].slice(0, 3);
-    const streak = calculateStreak(dailyTasks);
+    const streak = calculateStreak(allDaily);
 
     const monthlyPercent = monthlyGoals.length ? Math.round((monthlyGoals.filter(g => g.completed).length / monthlyGoals.length) * 100) : 0;
     const dailyPercent = todayTasks.length ? Math.round((todayTasks.filter(t => t.completed).length / todayTasks.length) * 100) : 0;
@@ -153,7 +170,7 @@ function renderDashboard(container) {
 }
 
 function renderDailyExecution(container) {
-    const dailyTasks = StorageManager.getDailyTasks();
+    const dailyTasks = StorageManager.getDailyTasks().filter(t => !t.archived);
     const todayTasks = [...dailyTasks];
 
     // Sorting
@@ -205,8 +222,14 @@ function renderDailyExecution(container) {
 }
 
 function renderWeeklyPlanner(container) {
-    const weeklyGoals = StorageManager.getWeeklyGoals();
-    const weekNum = getISOWeekNumber(new Date());
+    const weeklyGoals = StorageManager.getWeeklyGoals().filter(t => !t.archived);
+
+    // Auto-update to show correct dynamic week range instead of an ambiguous ISO week number
+    const curr = new Date();
+    const first = curr.getDate() - curr.getDay();
+    const firstDay = new Date(curr.setDate(first));
+    const lastDay = new Date(curr.setDate(first + 6));
+    const weekDisplay = `${firstDay.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${lastDay.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const todayIndex = new Date().getDay();
@@ -220,7 +243,7 @@ function renderWeeklyPlanner(container) {
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
             <h2 style="font-size: 2.2rem; margin-bottom: 0;">Weekly Planner</h2>
-            <span style="font-family: 'Unbounded', sans-serif; font-size: 0.85rem; color: var(--text-color); padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 16px; background: var(--card-color);">Week ${weekNum}</span>
+            <span style="font-family: 'Unbounded', sans-serif; font-size: 0.85rem; color: var(--text-color); padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 16px; background: var(--card-color);">${weekDisplay}</span>
         </div>
         <p style="color: var(--text-muted); margin-bottom: var(--spacing-md);">What is your focus for this week?</p>
         
@@ -242,7 +265,7 @@ function renderWeeklyPlanner(container) {
 }
 
 function renderMonthlyGoals(container) {
-    const monthlyGoals = StorageManager.getMonthlyGoals();
+    const monthlyGoals = StorageManager.getMonthlyGoals().filter(g => !g.archived);
 
     container.innerHTML = `
         <h2 style="font-size: 2.2rem; margin-bottom: 8px;">Monthly Goals</h2>
@@ -455,7 +478,8 @@ function toggleItem(type, id, completed) {
 function deleteItem(e, type, id) {
     e.stopPropagation();
     const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY };
-    StorageManager.deleteItem(keyMap[type], id);
+    // Archive it instead of rigidly destroying it, so it securely maps to our heatmap and analytics 
+    StorageManager.updateItem(keyMap[type], id, { archived: true });
     navigate(currentViewId);
 }
 

@@ -72,7 +72,17 @@ const StorageManager = {
         const items = this._get(categoryKey);
         const index = items.findIndex(item => item.id === id);
         if (index !== -1) {
-            items[index] = { ...items[index], ...updateData, updatedAt: new Date().toISOString() };
+            const item = items[index];
+
+            // If just now completing the item for the first time
+            if (updateData.completed && !item.completed) {
+                updateData.completedAt = new Date().toISOString();
+            } else if (updateData.completed === false) {
+                // If un-completing it
+                updateData.completedAt = null;
+            }
+
+            items[index] = { ...item, ...updateData, updatedAt: new Date().toISOString() };
             return this._save(categoryKey, items);
         }
         return false;

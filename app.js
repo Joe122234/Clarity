@@ -303,9 +303,9 @@ function renderAnalytics(container) {
         d.setDate(d.getDate() - i);
         const dateStr = d.toDateString();
 
-        const countDaily = dailyTasks.filter(t => t.completed && new Date(t.updatedAt || t.createdAt).toDateString() === dateStr).length;
-        const countWeekly = weeklyGoals.filter(t => t.completed && new Date(t.updatedAt || t.createdAt).toDateString() === dateStr).length;
-        const countMonthly = monthlyGoals.filter(t => t.completed && new Date(t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const countDaily = dailyTasks.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const countWeekly = weeklyGoals.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const countMonthly = monthlyGoals.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
         const totalOnDay = countDaily + countWeekly + countMonthly;
 
         last7Days.push(d.toLocaleDateString(undefined, { weekday: 'short' }));
@@ -383,7 +383,7 @@ function renderHeatmap(containerId, dailyTasks) {
         const d = new Date(year, month, i);
         const dateStr = d.toDateString();
 
-        const count = dailyTasks.filter(t => t.completed && new Date(t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const count = dailyTasks.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
 
         let level = count >= 3 ? 3 : count;
         const displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });

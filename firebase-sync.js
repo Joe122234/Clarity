@@ -37,7 +37,7 @@ keysToSync.forEach(key => {
             const remoteData = docSnap.data().payload;
             const localData = localStorage.getItem(key);
 
-            if (remoteData !== localData) {
+            if (remoteData && remoteData !== localData) {
                 window._isFirebaseSyncing = true;
                 localStorage.setItem(key, remoteData);
                 window._isFirebaseSyncing = false;

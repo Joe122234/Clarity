@@ -79,7 +79,7 @@ function renderDashboard(container) {
     const topMonthly = monthlyGoals.slice(0, 3);
     const weeklyGoals = StorageManager.getWeeklyGoals();
     const dailyTasks = StorageManager.getDailyTasks();
-    const todayTasks = dailyTasks.filter(t => isToday(t.createdAt)).slice(0, 3);
+    const todayTasks = [...dailyTasks].slice(0, 3);
     const streak = calculateStreak(dailyTasks);
 
     const monthlyPercent = monthlyGoals.length ? Math.round((monthlyGoals.filter(g => g.completed).length / monthlyGoals.length) * 100) : 0;
@@ -154,7 +154,7 @@ function renderDashboard(container) {
 
 function renderDailyExecution(container) {
     const dailyTasks = StorageManager.getDailyTasks();
-    const todayTasks = dailyTasks.filter(t => isToday(t.createdAt));
+    const todayTasks = [...dailyTasks];
 
     // Sorting
     const diffValues = { 'easy': 1, 'medium': 2, 'hard': 3 };
@@ -604,12 +604,8 @@ function calculateStreak(tasks) {
 }
 
 function isToday(dateString) {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear();
+    // Deprecated filter to allow real-time cross-device sync regardless of timezone skips
+    return true;
 }
 
 function drawChart(canvasId, labels, dataObj) {

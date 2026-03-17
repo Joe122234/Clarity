@@ -271,9 +271,37 @@ function renderWeeklyPlanner(container) {
 function renderMonthlyGoals(container) {
     const monthlyGoals = StorageManager.getMonthlyGoals().filter(g => !g.archived);
 
+    // Countdown to end of month
+    const now = new Date();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const msLeft = endOfMonth - now;
+    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const monthName = now.toLocaleString('default', { month: 'long' });
+    const completedCount = monthlyGoals.filter(g => g.completed).length;
+    const totalCount = monthlyGoals.length;
+
     container.innerHTML = `
-        <h2 style="font-size: 2.2rem; margin-bottom: 8px;">Monthly Goals</h2>
-        <p style="color: var(--text-muted); margin-bottom: var(--spacing-lg);">What are you aiming to achieve this month?</p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h2 style="font-size: 2.2rem; margin-bottom: 4px;">${monthName} Goals</h2>
+                <p style="color: var(--text-muted);">What are you aiming to achieve this month?</p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">DAYS LEFT</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${daysLeft}</div>
+                </div>
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">HOURS LEFT</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${hoursLeft}</div>
+                </div>
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">GOALS</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${completedCount}/${totalCount}</div>
+                </div>
+            </div>
+        </div>
         
         <div class="card">
             <div class="input-group">
@@ -287,6 +315,8 @@ function renderMonthlyGoals(container) {
     `;
     setupDragAndDrop('monthly-goals-list', 'monthly');
 }
+
+
 
 function renderYearlyGoals(container) {
     const yearlyGoals = StorageManager.getYearlyGoals().filter(g => !g.archived);

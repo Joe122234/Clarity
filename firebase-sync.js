@@ -28,7 +28,7 @@ window.syncToFirebase = async function (key, data) {
 };
 
 // Keys to sync matching storage.js definitions
-const keysToSync = ['clarity_monthly_goals', 'clarity_weekly_goals', 'clarity_daily_tasks', 'clarity_reflections', 'clarity_dismissed_notifications'];
+const keysToSync = ['clarity_yearly_goals', 'clarity_monthly_goals', 'clarity_weekly_goals', 'clarity_daily_tasks', 'clarity_reflections', 'clarity_dismissed_notifications'];
 
 // Listen for remote drops
 keysToSync.forEach(key => {

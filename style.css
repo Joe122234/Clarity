@@ -603,3 +603,40 @@ select.minimal-select option {
 .priority-medium {
     border-left: 3px solid rgba(250, 243, 225, 0.4);
 }
+
+/* Reflection Textarea */
+.reflection-textarea {
+    width: 100%;
+    min-height: 100px;
+    background: rgba(250, 243, 225, 0.03);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    padding: 14px 18px;
+    border-radius: 14px;
+    outline: none;
+    resize: vertical;
+    line-height: 1.6;
+    transition: border-color 0.2s ease;
+}
+
+.reflection-textarea:focus {
+    border-color: rgba(250, 243, 225, 0.35);
+}
+
+.reflection-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Yearly goal cards dragging */
+.yearly-goal-card.dragging {
+    opacity: 0.3;
+}
+
+@media (max-width: 800px) {
+    /* Collapse 2-col reflection grid on mobile */
+    .card div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}

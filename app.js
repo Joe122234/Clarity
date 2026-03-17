@@ -71,8 +71,12 @@ function navigate(viewId) {
         renderWeeklyPlanner(mainContent);
     } else if (viewId === 'monthly-goals') {
         renderMonthlyGoals(mainContent);
+    } else if (viewId === 'yearly-goals') {
+        renderYearlyGoals(mainContent);
     } else if (viewId === 'analytics') {
         renderAnalytics(mainContent);
+    } else if (viewId === 'reflection') {
+        renderReflection(mainContent);
     } else {
         const title = viewId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         mainContent.innerHTML = `
@@ -284,6 +288,289 @@ function renderMonthlyGoals(container) {
     setupDragAndDrop('monthly-goals-list', 'monthly');
 }
 
+function renderYearlyGoals(container) {
+    const yearlyGoals = StorageManager.getYearlyGoals().filter(g => !g.archived);
+    const totalGoals = yearlyGoals.length;
+    const completedGoals = yearlyGoals.filter(g => g.completed).length;
+    const yearPercent = totalGoals ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+    // Countdown to Dec 31
+    const now = new Date();
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    const msLeft = endOfYear - now;
+    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    const weeksLeft = Math.floor(daysLeft / 7);
+    const yearProgress = Math.round(((now - new Date(now.getFullYear(), 0, 1)) / (endOfYear - new Date(now.getFullYear(), 0, 1))) * 100);
+
+    const goalCards = yearlyGoals.length === 0
+        ? `<div style="color: var(--text-muted); padding: 24px 0; grid-column: 1 / -1; text-align: center; font-size: 1.05rem;">No goals yet — define what this year means to you.</div>`
+        : yearlyGoals.map(item => `
+            <div class="yearly-goal-card ${item.completed ? 'completed' : ''}" draggable="true" data-id="${item.id}" style="
+                background: ${item.completed ? 'rgba(250,243,225,0.02)' : 'rgba(250,243,225,0.05)'};
+                border: 1px solid ${item.completed ? 'rgba(250,243,225,0.06)' : 'rgba(250,243,225,0.18)'};
+                border-radius: 20px;
+                padding: 26px;
+                position: relative;
+                transition: all 0.3s ease;
+                ${item.completed ? 'opacity: 0.55;' : 'box-shadow: 0 8px 24px rgba(0,0,0,0.15);'}
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+                    <div onclick="toggleItem('yearly', '${item.id}', ${!item.completed})" style="
+                        cursor: pointer;
+                        width: 30px; height: 30px; min-width: 30px;
+                        border-radius: 50%;
+                        border: 2px solid ${item.completed ? 'var(--text-color)' : 'var(--text-muted)'};
+                        background: ${item.completed ? 'var(--text-color)' : 'transparent'};
+                        display: flex; align-items: center; justify-content: center;
+                        transition: all 0.25s ease;
+                    ">
+                        ${item.completed ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="cursor: grab; opacity: 0.5;" class="drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                        <button onclick="deleteItem(event, 'yearly', '${item.id}')" style="background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='var(--text-color)'" onmouseout="this.style.color='var(--text-muted)'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                </div>
+                <div style="font-size: 1.05rem; font-weight: 600; line-height: 1.5; ${item.completed ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${item.text}</div>
+                <div style="margin-top: 14px; font-size: 0.75rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">${new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</div>
+            </div>
+        `).join('');
+
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h2 style="font-size: 2.2rem; margin-bottom: 4px;">${now.getFullYear()} Goals</h2>
+                <p style="color: var(--text-muted);">What does winning this year look like?</p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">DAYS LEFT</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${daysLeft}</div>
+                </div>
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">WEEKS LEFT</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${weeksLeft}</div>
+                </div>
+                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">GOALS</div>
+                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${completedGoals}/${totalGoals}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; padding: 20px var(--spacing-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">Year Progress</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">${yearProgress}%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-top: 0; height: 8px;">
+                <div class="progress-bar-fill" style="width: ${yearProgress}%; background: rgba(250,243,225,0.25);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--text-muted);">
+                <span>Jan 1</span><span>Dec 31</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="input-group" style="margin-bottom: 0;">
+                <input type="text" id="new-yearly-input" placeholder="Define a major goal for ${now.getFullYear()}..." onkeypress="handleEnter(event, addYearlyGoal)" style="font-size: 1rem;">
+                <button onclick="addYearlyGoal()" style="white-space: nowrap;">Add Goal</button>
+            </div>
+        </div>
+
+        <div id="yearly-goals-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--spacing-md);">
+            ${goalCards}
+        </div>
+    `;
+
+    setupDragAndDrop('yearly-goals-list', 'yearly', '.yearly-goal-card');
+}
+
+function renderReflection(container) {
+    const now = new Date();
+    const dailyTasks   = StorageManager.getDailyTasks();
+    const weeklyGoals  = StorageManager.getWeeklyGoals();
+    const monthlyGoals = StorageManager.getMonthlyGoals();
+    const yearlyGoals  = StorageManager.getYearlyGoals();
+    const allItems     = [...dailyTasks, ...weeklyGoals, ...monthlyGoals, ...yearlyGoals];
+
+    // ── All-time totals ──────────────────────────────────────────────
+    const allCompleted = allItems.filter(t => t.completed).length;
+    const allTotal     = allItems.filter(t => !t.archived).length + allItems.filter(t => t.archived).length;
+
+    // ── Completion rates per category ────────────────────────────────
+    const rateOf = (arr) => {
+        const active = arr.filter(t => !t.archived);
+        if (!active.length) return 0;
+        return Math.round((active.filter(t => t.completed).length / active.length) * 100);
+    };
+    const dailyRate   = rateOf(dailyTasks);
+    const weeklyRate  = rateOf(weeklyGoals);
+    const monthlyRate = rateOf(monthlyGoals);
+    const yearlyRate  = rateOf(yearlyGoals);
+
+    // ── Current streak ───────────────────────────────────────────────
+    const currentStreak = calculateStreak(dailyTasks);
+
+    // ── Best streak ever ─────────────────────────────────────────────
+    const completedDates = new Set(
+        dailyTasks
+            .filter(t => t.completed)
+            .map(t => new Date(t.createdAt).toDateString())
+    );
+    let bestStreak = 0, tempStreak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        if (completedDates.has(d.toDateString())) {
+            tempStreak++;
+            if (tempStreak > bestStreak) bestStreak = tempStreak;
+        } else {
+            tempStreak = 0;
+        }
+    }
+
+    // ── This week vs last week ───────────────────────────────────────
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - now.getDay());
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+    const thisWeekCount = allItems.filter(t => {
+        if (!t.completed) return false;
+        const d = new Date(t.completedAt || t.updatedAt || t.createdAt);
+        return d >= startOfThisWeek;
+    }).length;
+
+    const lastWeekCount = allItems.filter(t => {
+        if (!t.completed) return false;
+        const d = new Date(t.completedAt || t.updatedAt || t.createdAt);
+        return d >= startOfLastWeek && d < startOfThisWeek;
+    }).length;
+
+    const weekDelta = lastWeekCount > 0
+        ? Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 100)
+        : (thisWeekCount > 0 ? 100 : 0);
+    const weekDeltaLabel = weekDelta >= 0
+        ? `<span style="color: rgba(150,220,150,0.9);">▲ ${weekDelta}% vs last week</span>`
+        : `<span style="color: rgba(220,130,130,0.9);">▼ ${Math.abs(weekDelta)}% vs last week</span>`;
+
+    // ── Momentum score (0-100): weighted recent activity ────────────
+    let momentumScore = 0;
+    for (let i = 0; i < 14; i++) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dateStr = d.toDateString();
+        const count = allItems.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        // Recent days weighted more
+        momentumScore += count * (14 - i);
+    }
+    // Normalise to 0-100 range (cap at 100)
+    const rawMax = 7 * (14 + 13 + 12 + 11 + 10 + 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1); // 7 tasks/day max
+    momentumScore = Math.min(100, Math.round((momentumScore / rawMax) * 100));
+    const momentumLabel = momentumScore >= 80 ? 'On Fire 🔥' : momentumScore >= 55 ? 'Building 📈' : momentumScore >= 30 ? 'Warming Up ⚡' : 'Getting Started 🌱';
+
+    // ── Heatmap data: daily tasks completed per day this month ───────
+    const year  = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    let heatmap = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">';
+    ['S','M','T','W','T','F','S'].forEach(d => {
+        heatmap += `<div style="text-align:center;font-size:0.6rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;margin-bottom:2px;">${d}</div>`;
+    });
+    for (let i = 0; i < firstDayOfMonth; i++) heatmap += '<div></div>';
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dateStr = new Date(year, month, i).toDateString();
+        const count = dailyTasks.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const level = count >= 3 ? 3 : count;
+        heatmap += `<div class="heatmap-day level-${level}" style="width:100%;aspect-ratio:1;border-radius:3px;" title="${new Date(year,month,i).toLocaleDateString()} — ${count} tasks"></div>`;
+    }
+    heatmap += '</div>';
+
+    // ── Stat card helper ─────────────────────────────────────────────
+    const statCard = (label, value, sub = '') => `
+        <div class="card" style="text-align:center; padding: 24px 20px;">
+            <div style="font-size:0.7rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">${label}</div>
+            <div style="font-size:2rem;font-family:'Unbounded',sans-serif;font-weight:600;line-height:1;">${value}</div>
+            ${sub ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;">${sub}</div>` : ''}
+        </div>`;
+
+    // ── Bar helper ───────────────────────────────────────────────────
+    const catBar = (label, pct) => `
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.85rem;">
+                <span>${label}</span>
+                <span style="font-family:'Unbounded',sans-serif;font-size:0.8rem;">${pct}%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-top:0;height:7px;">
+                <div class="progress-bar-fill" style="width:${pct}%;"></div>
+            </div>
+        </div>`;
+
+    container.innerHTML = `
+        <h2 style="font-size:2.2rem;margin-bottom:4px;">Your Stats</h2>
+        <p style="color:var(--text-muted);margin-bottom:var(--spacing-lg);">The numbers don't lie. Here's where you actually stand.</p>
+
+        <!-- Momentum Score Hero -->
+        <div class="card" style="background:linear-gradient(135deg,rgba(250,243,225,0.04) 0%,rgba(250,243,225,0.08) 100%);text-align:center;padding:36px var(--spacing-lg);">
+            <div style="font-size:0.7rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Momentum Score</div>
+            <div style="font-size:4rem;font-family:'Unbounded',sans-serif;font-weight:700;line-height:1;margin-bottom:12px;">${momentumScore}</div>
+            <div style="font-size:1rem;color:var(--text-muted);">${momentumLabel}</div>
+            <div style="margin-top:20px;background:rgba(250,243,225,0.07);border-radius:12px;height:10px;overflow:hidden;">
+                <div style="height:100%;width:${momentumScore}%;background:rgba(250,243,225,0.45);border-radius:12px;transition:width 0.8s cubic-bezier(0.22,1,0.36,1);"></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:10px;">Based on your last 14 days of activity</div>
+        </div>
+
+        <!-- Top Stats Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--spacing-md);">
+            ${statCard('All-Time Completed', allCompleted, `out of ${allTotal} total`)}
+            ${statCard('Current Streak', `${currentStreak}d`, currentStreak > 0 ? '🔥 keep going' : 'Start today')}
+            ${statCard('Best Streak', `${bestStreak}d`, 'daily tasks record')}
+            ${statCard('This Week', thisWeekCount, weekDeltaLabel)}
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="card">
+            <h3 style="font-size:0.85rem;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:var(--spacing-md);">Completion Rate by Category</h3>
+            ${catBar('Daily Tasks', dailyRate)}
+            ${catBar('Weekly Goals', weeklyRate)}
+            ${catBar('Monthly Goals', monthlyRate)}
+            ${catBar('Yearly Goals', yearlyRate)}
+        </div>
+
+        <!-- Heatmap -->
+        <div class="card">
+            <h3 style="font-size:0.85rem;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:var(--spacing-md);">${now.toLocaleString('default',{month:'long'})} Daily Consistency</h3>
+            <div style="max-width:260px;">${heatmap}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:14px;font-size:0.72rem;color:var(--text-muted);">
+                <span>Less</span>
+                <div class="heatmap-day level-0" style="width:12px;height:12px;border-radius:2px;display:inline-block;"></div>
+                <div class="heatmap-day level-1" style="width:12px;height:12px;border-radius:2px;display:inline-block;"></div>
+                <div class="heatmap-day level-2" style="width:12px;height:12px;border-radius:2px;display:inline-block;"></div>
+                <div class="heatmap-day level-3" style="width:12px;height:12px;border-radius:2px;display:inline-block;"></div>
+                <span>More</span>
+            </div>
+        </div>
+    `;
+}
+
+
+
+
+function deleteReflection(id) {
+    StorageManager.deleteItem(StorageKeys.REFLECTION, id);
+    navigate(currentViewId);
+}
+
+
 function renderAnalytics(container) {
     const dailyTasks = StorageManager.getDailyTasks();
     const weeklyGoals = StorageManager.getWeeklyGoals();
@@ -306,7 +593,8 @@ function renderAnalytics(container) {
         const countDaily = dailyTasks.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
         const countWeekly = weeklyGoals.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
         const countMonthly = monthlyGoals.filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
-        const totalOnDay = countDaily + countWeekly + countMonthly;
+        const countYearly = StorageManager.getYearlyGoals().filter(t => t.completed && new Date(t.completedAt || t.updatedAt || t.createdAt).toDateString() === dateStr).length;
+        const totalOnDay = countDaily + countWeekly + countMonthly + countYearly;
 
         last7Days.push(d.toLocaleDateString(undefined, { weekday: 'short' }));
         dailyCounts.push(countDaily);
@@ -469,15 +757,48 @@ function addMonthlyGoal() {
     navigate(currentViewId);
 }
 
+function addYearlyGoal() {
+    const input = document.getElementById('new-yearly-input');
+    if (!input || !input.value.trim()) return;
+    StorageManager.addYearlyGoal({ text: input.value.trim(), completed: false });
+    input.value = '';
+    navigate(currentViewId);
+}
+
+function addReflectionItem() {
+    const accomplishments = document.getElementById('reflect-accomplishments');
+    const lessons = document.getElementById('reflect-lessons');
+    const improvements = document.getElementById('reflect-improvements');
+    const journal = document.getElementById('reflect-journal');
+    
+    // Only save if at least one field is filled
+    if (!(accomplishments.value.trim() || lessons.value.trim() || improvements.value.trim() || journal.value.trim())) return;
+
+    StorageManager.addReflection({
+        accomplishments: accomplishments.value.trim(),
+        lessons: lessons.value.trim(),
+        improvements: improvements.value.trim(),
+        journal: journal.value.trim()
+    });
+
+    // Clear form
+    accomplishments.value = '';
+    lessons.value = '';
+    improvements.value = '';
+    journal.value = '';
+
+    navigate(currentViewId);
+}
+
 function toggleItem(type, id, completed) {
-    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY };
+    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
     StorageManager.updateItem(keyMap[type], id, { completed });
     navigate(currentViewId);
 }
 
 function deleteItem(e, type, id) {
     e.stopPropagation();
-    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY };
+    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
     // Archive it instead of rigidly destroying it, so it securely maps to our heatmap and analytics 
     StorageManager.updateItem(keyMap[type], id, { archived: true });
     navigate(currentViewId);
@@ -487,7 +808,7 @@ function deleteItem(e, type, id) {
 // Native Drag and Drop
 // ---------------------------------------------------------
 
-function setupDragAndDrop(containerId, type) {
+function setupDragAndDrop(containerId, type, itemSelector = '.list-item') {
     const list = document.getElementById(containerId);
     if (!list) return;
 
@@ -495,8 +816,8 @@ function setupDragAndDrop(containerId, type) {
 
     list.addEventListener('dragstart', e => {
         let el = e.target;
-        if (!el.classList.contains('list-item')) {
-            el = el.closest('.list-item');
+        if (!el.matches(itemSelector)) {
+            el = el.closest(itemSelector);
             if (!el) return;
         }
         draggedItem = el;
@@ -510,17 +831,17 @@ function setupDragAndDrop(containerId, type) {
 
     list.addEventListener('dragend', e => {
         let el = e.target;
-        if (!el.classList.contains('list-item')) {
-            el = el.closest('.list-item');
+        if (!el.matches(itemSelector)) {
+            el = el.closest(itemSelector);
         }
         if (el) el.classList.remove('dragging');
         draggedItem = null;
 
         // Save new order via id
-        const itemEls = Array.from(list.querySelectorAll('.list-item'));
+        const itemEls = Array.from(list.querySelectorAll(itemSelector));
         const newOrderIds = itemEls.map(element => element.dataset.id).filter(Boolean);
 
-        const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY };
+        const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
         StorageManager.reorderItems(keyMap[type], newOrderIds);
     });
 
@@ -528,7 +849,7 @@ function setupDragAndDrop(containerId, type) {
         e.preventDefault();
         if (dragCategory !== type) return;
 
-        const afterElement = getDragAfterElement(list, e.clientY);
+        const afterElement = getDragAfterElement(list, e.clientY, itemSelector);
         const currentDraggable = document.querySelector('.dragging');
         if (!currentDraggable) return;
 
@@ -540,8 +861,8 @@ function setupDragAndDrop(containerId, type) {
     });
 }
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.list-item:not(.dragging)')];
+function getDragAfterElement(container, y, itemSelector = '.list-item') {
+    const draggableElements = [...container.querySelectorAll(`${itemSelector}:not(.dragging)`)];
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
@@ -552,6 +873,7 @@ function getDragAfterElement(container, y) {
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
 
 // ---------------------------------------------------------
 // Utilities & Drawing

@@ -4,6 +4,7 @@ const StorageKeys = {
     MONTHLY: 'clarity_monthly_goals',
     WEEKLY: 'clarity_weekly_goals',
     DAILY: 'clarity_daily_tasks',
+    YEARLY: 'clarity_yearly_goals',
     REFLECTION: 'clarity_reflections'
 };
 
@@ -33,8 +34,9 @@ const StorageManager = {
     },
 
     // Category Specific Retrievers
-    getMonthlyGoals: function () { return this._get(StorageKeys.MONTHLY); },
     getWeeklyGoals: function () { return this._get(StorageKeys.WEEKLY); },
+    getMonthlyGoals: function () { return this._get(StorageKeys.MONTHLY); },
+    getYearlyGoals: function () { return this._get(StorageKeys.YEARLY); },
     getDailyTasks: function () { return this._get(StorageKeys.DAILY); },
     getReflections: function () { return this._get(StorageKeys.REFLECTION); },
 
@@ -58,6 +60,13 @@ const StorageManager = {
         const newTask = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...taskData };
         tasks.push(newTask);
         return this._save(StorageKeys.DAILY, tasks) ? newTask : null;
+    },
+
+    addYearlyGoal: function (goalData) {
+        const goals = this.getYearlyGoals();
+        const newGoal = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...goalData };
+        goals.push(newGoal);
+        return this._save(StorageKeys.YEARLY, goals) ? newGoal : null;
     },
 
     addReflection: function (reflectionData) {

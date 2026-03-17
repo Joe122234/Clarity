@@ -64,12 +64,43 @@ const StorageManager = {
 
     addYearlyGoal: function (goalData) {
         const goals = this.getYearlyGoals();
-        const newGoal = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...goalData };
+        const newGoal = { id: Date.now().toString(), createdAt: new Date().toISOString(), milestones: [], ...goalData };
         goals.push(newGoal);
         return this._save(StorageKeys.YEARLY, goals) ? newGoal : null;
     },
 
+    addMilestone: function (goalId, milestoneData) {
+        const goals = this.getYearlyGoals();
+        const idx = goals.findIndex(g => g.id === goalId);
+        if (idx === -1) return null;
+        if (!Array.isArray(goals[idx].milestones)) goals[idx].milestones = [];
+        const m = { id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, ...milestoneData };
+        goals[idx].milestones.push(m);
+        return this._save(StorageKeys.YEARLY, goals) ? m : null;
+    },
+
+    toggleMilestone: function (goalId, milestoneId, completed) {
+        const goals = this.getYearlyGoals();
+        const gIdx = goals.findIndex(g => g.id === goalId);
+        if (gIdx === -1) return false;
+        const ms = goals[gIdx].milestones || [];
+        const mIdx = ms.findIndex(m => m.id === milestoneId);
+        if (mIdx === -1) return false;
+        ms[mIdx] = { ...ms[mIdx], completed, completedAt: completed ? new Date().toISOString() : null };
+        goals[gIdx].milestones = ms;
+        return this._save(StorageKeys.YEARLY, goals);
+    },
+
+    deleteMilestone: function (goalId, milestoneId) {
+        const goals = this.getYearlyGoals();
+        const gIdx = goals.findIndex(g => g.id === goalId);
+        if (gIdx === -1) return false;
+        goals[gIdx].milestones = (goals[gIdx].milestones || []).filter(m => m.id !== milestoneId);
+        return this._save(StorageKeys.YEARLY, goals);
+    },
+
     addReflection: function (reflectionData) {
+
         const reflections = this.getReflections();
         const newReflection = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...reflectionData };
         reflections.push(newReflection);

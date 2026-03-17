@@ -318,105 +318,227 @@ function renderMonthlyGoals(container) {
 
 
 
+function renderYearlyGoalCard(item) {
+    const now = new Date();
+    const currentQ = Math.ceil((now.getMonth() + 1) / 3);
+    const milestones = Array.isArray(item.milestones) ? item.milestones : [];
+    const mTotal = milestones.length;
+    const mDone  = milestones.filter(m => m.completed).length;
+    const mPct   = mTotal ? Math.round((mDone / mTotal) * 100) : 0;
+
+    // Quarter background opacity — increases each quarter
+    const qBg = { Q1: '0.10', Q2: '0.18', Q3: '0.28', Q4: '0.42' };
+
+    const msListHTML = milestones.map(m => {
+        const q = m.quarter || 'Q1';
+        const isCurrent = parseInt(q.substring(1)) === currentQ;
+        return `
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(250,243,225,0.05);cursor:pointer;"
+             onclick="toggleYearlyMilestone('${item.id}','${m.id}',${!m.completed})">
+            <div style="width:16px;height:16px;min-width:16px;border-radius:4px;
+                        border:1.5px solid ${m.completed ? 'var(--text-color)' : 'rgba(250,243,225,0.3)'};
+                        background:${m.completed ? 'var(--text-color)' : 'transparent'};
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;">
+                ${m.completed ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            </div>
+            <span style="flex:1;font-size:0.88rem;line-height:1.4;${m.completed ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${m.text}</span>
+            <span style="font-size:0.62rem;font-family:'Unbounded',sans-serif;padding:3px 9px;border-radius:20px;
+                         background:rgba(250,243,225,${qBg[q]});
+                         ${isCurrent ? 'border:1px solid rgba(250,243,225,0.35);' : ''}
+                         flex-shrink:0;white-space:nowrap;">${q}</span>
+            <button onclick="event.stopPropagation();deleteYearlyMilestone('${item.id}','${m.id}')"
+                    style="background:transparent;border:none;padding:2px 4px;color:var(--text-muted);cursor:pointer;flex-shrink:0;display:flex;align-items:center;transition:color 0.15s;"
+                    onmouseover="this.style.color='var(--text-color)'" onmouseout="this.style.color='var(--text-muted)'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>`;
+    }).join('');
+
+    const progressBar = mTotal > 0 ? `
+        <div style="margin:16px 0 12px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;margin-bottom:6px;">
+                <span>${mDone} of ${mTotal} milestones</span><span>${mPct}%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-top:0;height:4px;">
+                <div class="progress-bar-fill" style="width:${mPct}%;"></div>
+            </div>
+        </div>` : '';
+
+    const qOptions = ['Q1','Q2','Q3','Q4'].map(q =>
+        `<option value="${q}" ${q === 'Q' + currentQ ? 'selected' : ''}>${q} · ${q==='Q1'?'Jan–Mar':q==='Q2'?'Apr–Jun':q==='Q3'?'Jul–Sep':'Oct–Dec'}</option>`
+    ).join('');
+
+    return `
+    <div class="yearly-goal-card ${item.completed ? 'completed' : ''}" draggable="true" data-id="${item.id}" style="
+        background:${item.completed ? 'rgba(250,243,225,0.02)' : 'rgba(250,243,225,0.05)'};
+        border:1px solid ${item.completed ? 'rgba(250,243,225,0.06)' : 'rgba(250,243,225,0.18)'};
+        border-radius:20px;padding:22px 24px;position:relative;transition:all 0.3s ease;
+        ${item.completed ? 'opacity:0.55;' : 'box-shadow:0 8px 28px rgba(0,0,0,0.18);'}
+    ">
+        <!-- Goal header -->
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:4px;">
+            <div onclick="toggleItem('yearly','${item.id}',${!item.completed})" style="
+                cursor:pointer;width:28px;height:28px;min-width:28px;border-radius:50%;flex-shrink:0;
+                border:2px solid ${item.completed ? 'var(--text-color)' : 'rgba(250,243,225,0.4)'};
+                background:${item.completed ? 'var(--text-color)' : 'transparent'};
+                display:flex;align-items:center;justify-content:center;transition:all 0.25s;margin-top:2px;">
+                ${item.completed ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            </div>
+            <div style="flex:1;font-size:1.05rem;font-weight:600;line-height:1.5;${item.completed ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${item.text}</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="cursor:grab;opacity:0.4;" class="drag-handle"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                <button onclick="deleteItem(event,'yearly','${item.id}')" style="background:transparent;border:none;padding:4px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;" onmouseover="this.style.color='var(--text-color)'" onmouseout="this.style.color='var(--text-muted)'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Milestone progress bar -->
+        ${progressBar}
+
+        <!-- Milestones list -->
+        ${mTotal > 0 ? `<div style="margin-bottom:4px;">${msListHTML}</div>` : ''}
+
+        <!-- Inline add-milestone form (hidden by default) -->
+        <div id="ms-form-${item.id}" style="display:none;margin-top:14px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="ms-input-${item.id}"
+                    placeholder="e.g. Launch beta version..."
+                    onkeypress="if(event.key==='Enter')addYearlyMilestone('${item.id}')"
+                    style="flex:1;min-width:140px;background:rgba(250,243,225,0.05);border:1px solid rgba(250,243,225,0.2);
+                           color:var(--text-color);font-family:'Montserrat',sans-serif;font-size:0.85rem;
+                           padding:9px 14px;border-radius:10px;outline:none;">
+                <select id="ms-q-${item.id}"
+                    style="background:var(--bg-color);border:1px solid rgba(250,243,225,0.2);color:var(--text-color);
+                           font-family:'Montserrat',sans-serif;font-size:0.8rem;padding:9px 10px;border-radius:10px;outline:none;cursor:pointer;">
+                    ${qOptions}
+                </select>
+                <button onclick="addYearlyMilestone('${item.id}')" style="padding:9px 16px;font-size:0.82rem;border-radius:10px;white-space:nowrap;">Save</button>
+            </div>
+        </div>
+
+        <!-- Add milestone toggle button -->
+        <button onclick="toggleMilestoneForm('${item.id}')" id="ms-btn-${item.id}"
+            style="margin-top:${mTotal > 0 ? '12' : '16'}px;width:100%;background:transparent;
+                   border:1px dashed rgba(250,243,225,0.18);color:var(--text-muted);border-radius:12px;
+                   padding:9px;font-size:0.78rem;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all 0.2s;"
+            onmouseover="this.style.borderColor='rgba(250,243,225,0.35)';this.style.color='var(--text-color)'"
+            onmouseout="this.style.borderColor='rgba(250,243,225,0.18)';this.style.color='var(--text-muted)'">
+            + Add Milestone
+        </button>
+
+        <div style="margin-top:12px;font-size:0.68rem;color:rgba(250,243,225,0.3);font-family:'Unbounded',sans-serif;">
+            ${new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+        </div>
+    </div>`;
+}
+
 function renderYearlyGoals(container) {
     const yearlyGoals = StorageManager.getYearlyGoals().filter(g => !g.archived);
-    const totalGoals = yearlyGoals.length;
+    const totalGoals    = yearlyGoals.length;
     const completedGoals = yearlyGoals.filter(g => g.completed).length;
-    const yearPercent = totalGoals ? Math.round((completedGoals / totalGoals) * 100) : 0;
 
     // Countdown to Dec 31
     const now = new Date();
     const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-    const msLeft = endOfYear - now;
-    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    const msLeft    = endOfYear - now;
+    const daysLeft  = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
     const weeksLeft = Math.floor(daysLeft / 7);
     const yearProgress = Math.round(((now - new Date(now.getFullYear(), 0, 1)) / (endOfYear - new Date(now.getFullYear(), 0, 1))) * 100);
 
     const goalCards = yearlyGoals.length === 0
-        ? `<div style="color: var(--text-muted); padding: 24px 0; grid-column: 1 / -1; text-align: center; font-size: 1.05rem;">No goals yet — define what this year means to you.</div>`
-        : yearlyGoals.map(item => `
-            <div class="yearly-goal-card ${item.completed ? 'completed' : ''}" draggable="true" data-id="${item.id}" style="
-                background: ${item.completed ? 'rgba(250,243,225,0.02)' : 'rgba(250,243,225,0.05)'};
-                border: 1px solid ${item.completed ? 'rgba(250,243,225,0.06)' : 'rgba(250,243,225,0.18)'};
-                border-radius: 20px;
-                padding: 26px;
-                position: relative;
-                transition: all 0.3s ease;
-                ${item.completed ? 'opacity: 0.55;' : 'box-shadow: 0 8px 24px rgba(0,0,0,0.15);'}
-            ">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
-                    <div onclick="toggleItem('yearly', '${item.id}', ${!item.completed})" style="
-                        cursor: pointer;
-                        width: 30px; height: 30px; min-width: 30px;
-                        border-radius: 50%;
-                        border: 2px solid ${item.completed ? 'var(--text-color)' : 'var(--text-muted)'};
-                        background: ${item.completed ? 'var(--text-color)' : 'transparent'};
-                        display: flex; align-items: center; justify-content: center;
-                        transition: all 0.25s ease;
-                    ">
-                        ${item.completed ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="cursor: grab; opacity: 0.5;" class="drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-                        <button onclick="deleteItem(event, 'yearly', '${item.id}')" style="background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='var(--text-color)'" onmouseout="this.style.color='var(--text-muted)'">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
-                </div>
-                <div style="font-size: 1.05rem; font-weight: 600; line-height: 1.5; ${item.completed ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${item.text}</div>
-                <div style="margin-top: 14px; font-size: 0.75rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">${new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</div>
-            </div>
-        `).join('');
+        ? `<div style="color:var(--text-muted);padding:24px 0;grid-column:1/-1;text-align:center;font-size:1.05rem;">No goals yet — define what this year means to you.</div>`
+        : yearlyGoals.map(item => renderYearlyGoalCard(item)).join('');
 
     container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;gap:16px;">
             <div>
-                <h2 style="font-size: 2.2rem; margin-bottom: 4px;">${now.getFullYear()} Goals</h2>
-                <p style="color: var(--text-muted);">What does winning this year look like?</p>
+                <h2 style="font-size:2.2rem;margin-bottom:4px;">${now.getFullYear()} Goals</h2>
+                <p style="color:var(--text-muted);">What does winning this year look like?</p>
             </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">DAYS LEFT</div>
-                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${daysLeft}</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                <div style="text-align:center;background:var(--card-color);border:1px solid var(--border-color);border-radius:16px;padding:12px 20px;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;margin-bottom:4px;">DAYS LEFT</div>
+                    <div style="font-size:1.6rem;font-family:'Unbounded',sans-serif;font-weight:600;">${daysLeft}</div>
                 </div>
-                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">WEEKS LEFT</div>
-                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${weeksLeft}</div>
+                <div style="text-align:center;background:var(--card-color);border:1px solid var(--border-color);border-radius:16px;padding:12px 20px;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;margin-bottom:4px;">WEEKS LEFT</div>
+                    <div style="font-size:1.6rem;font-family:'Unbounded',sans-serif;font-weight:600;">${weeksLeft}</div>
                 </div>
-                <div style="text-align: center; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 20px;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">GOALS</div>
-                    <div style="font-size: 1.6rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${completedGoals}/${totalGoals}</div>
+                <div style="text-align:center;background:var(--card-color);border:1px solid var(--border-color);border-radius:16px;padding:12px 20px;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;margin-bottom:4px;">GOALS</div>
+                    <div style="font-size:1.6rem;font-family:'Unbounded',sans-serif;font-weight:600;">${completedGoals}/${totalGoals}</div>
                 </div>
             </div>
         </div>
 
-        <div class="card" style="margin-bottom: 0; padding: 20px var(--spacing-lg);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">Year Progress</span>
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif;">${yearProgress}%</span>
+        <div class="card" style="padding:20px var(--spacing-lg);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:0.8rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Year Progress</span>
+                <span style="font-size:0.8rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">${yearProgress}%</span>
             </div>
-            <div class="progress-bar-bg" style="margin-top: 0; height: 8px;">
-                <div class="progress-bar-fill" style="width: ${yearProgress}%; background: rgba(250,243,225,0.25);"></div>
+            <div class="progress-bar-bg" style="margin-top:0;height:8px;">
+                <div class="progress-bar-fill" style="width:${yearProgress}%;background:rgba(250,243,225,0.25);"></div>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--text-muted);">
-                <span>Jan 1</span><span>Dec 31</span>
+            <!-- Quarter markers -->
+            <div style="position:relative;margin-top:8px;height:18px;">
+                <span style="position:absolute;left:0;font-size:0.65rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Jan</span>
+                <span style="position:absolute;left:25%;transform:translateX(-50%);font-size:0.65rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Q2</span>
+                <span style="position:absolute;left:50%;transform:translateX(-50%);font-size:0.65rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Q3</span>
+                <span style="position:absolute;left:75%;transform:translateX(-50%);font-size:0.65rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Q4</span>
+                <span style="position:absolute;right:0;font-size:0.65rem;color:var(--text-muted);font-family:'Unbounded',sans-serif;">Dec</span>
             </div>
         </div>
 
         <div class="card">
-            <div class="input-group" style="margin-bottom: 0;">
-                <input type="text" id="new-yearly-input" placeholder="Define a major goal for ${now.getFullYear()}..." onkeypress="handleEnter(event, addYearlyGoal)" style="font-size: 1rem;">
-                <button onclick="addYearlyGoal()" style="white-space: nowrap;">Add Goal</button>
+            <div class="input-group" style="margin-bottom:0;">
+                <input type="text" id="new-yearly-input" placeholder="Define a major goal for ${now.getFullYear()}..." onkeypress="handleEnter(event, addYearlyGoal)" style="font-size:1rem;">
+                <button onclick="addYearlyGoal()" style="white-space:nowrap;">Add Goal</button>
             </div>
         </div>
 
-        <div id="yearly-goals-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--spacing-md);">
+        <div id="yearly-goals-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--spacing-md);">
             ${goalCards}
         </div>
     `;
 
     setupDragAndDrop('yearly-goals-list', 'yearly', '.yearly-goal-card');
 }
+
+// ── Milestone interaction functions ─────────────────────────────────────────
+function toggleMilestoneForm(goalId) {
+    const form = document.getElementById('ms-form-' + goalId);
+    const btn  = document.getElementById('ms-btn-' + goalId);
+    if (!form) return;
+    const opening = form.style.display === 'none';
+    form.style.display = opening ? 'block' : 'none';
+    if (btn) btn.textContent = opening ? '✕ Cancel' : '+ Add Milestone';
+    if (opening) {
+        const inp = document.getElementById('ms-input-' + goalId);
+        if (inp) inp.focus();
+    }
+}
+
+function addYearlyMilestone(goalId) {
+    const input = document.getElementById('ms-input-' + goalId);
+    const qSel  = document.getElementById('ms-q-' + goalId);
+    if (!input || !input.value.trim()) return;
+    StorageManager.addMilestone(goalId, { text: input.value.trim(), quarter: qSel ? qSel.value : 'Q1' });
+    navigate(currentViewId);
+}
+
+function toggleYearlyMilestone(goalId, milestoneId, completed) {
+    StorageManager.toggleMilestone(goalId, milestoneId, completed);
+    navigate(currentViewId);
+}
+
+function deleteYearlyMilestone(goalId, milestoneId) {
+    StorageManager.deleteMilestone(goalId, milestoneId);
+    navigate(currentViewId);
+}
+
+
+
 
 function renderReflection(container) {
     const now = new Date();

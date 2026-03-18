@@ -65,6 +65,8 @@ function navigate(viewId) {
 
     if (viewId === 'dashboard') {
         renderDashboard(mainContent);
+    } else if (viewId === 'habit-tracker') {
+        renderHabitTracker(mainContent);
     } else if (viewId === 'daily-execution') {
         renderDailyExecution(mainContent);
     } else if (viewId === 'weekly-planner') {
@@ -723,6 +725,114 @@ function deleteReflection(id) {
 }
 
 
+function renderHabitTracker(container) {
+    const habits = StorageManager.getHabits().filter(h => !h.archived);
+    
+    // Checkboxes for "did I do this today?"
+    const now = new Date();
+    const todayStr = now.toDateString(); 
+    
+    const todayCheckboxesHTML = habits.map(h => {
+        const isDoneToday = (h.completedDates || []).includes(todayStr);
+        return `
+            <div class="list-item ${isDoneToday ? 'completed' : ''}" style="cursor: pointer;" onclick="toggleHabitDay('${h.id}', '${todayStr}', ${!isDoneToday})">
+                <div class="checkbox">
+                    ${isDoneToday ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bg-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                </div>
+                <span class="item-text" style="flex: 1; user-select: none;">${h.text}</span>
+            </div>
+        `;
+    }).join('') || '<div style="color: var(--text-muted); padding: 12px 0;">No habits defined yet.</div>';
+
+    // Habit cards
+    const monthStrStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    
+    const habitCardsHTML = habits.map(h => {
+        let streak = 0;
+        let checkDate = new Date();
+        const dates = h.completedDates || [];
+        
+        if (!dates.includes(checkDate.toDateString())) {
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+        while (dates.includes(checkDate.toDateString())) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+        
+        let completedThisMonth = 0;
+        for (let i = 1; i <= daysInMonth; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth(), i).toDateString();
+            if (dates.includes(d)) completedThisMonth++;
+        }
+        const pctThisMonth = Math.round((completedThisMonth / daysInMonth) * 100);
+
+        // Heatmap for last 30 days
+        let heatmapHTML = '<div style="display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-top: 12px; max-width: 100%;">';
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const isCompleted = dates.includes(d.toDateString());
+            heatmapHTML += `<div style="flex-shrink: 0; width: 12px; height: 12px; border-radius: 2px; background: ${isCompleted ? 'rgba(250, 243, 225, 0.7)' : 'rgba(250, 243, 225, 0.05)'};" title="${d.toLocaleDateString()}"></div>`;
+        }
+        heatmapHTML += '</div>';
+
+        return `
+            <div class="card" draggable="true" data-id="${h.id}" style="position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h3 style="font-size: 1.1rem; line-height: 1.4; max-width: 80%;">${h.text}</h3>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="cursor: grab; opacity: 0.5;" class="drag-handle"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                        <button onclick="deleteItem(event, 'habit', '${h.id}')" style="background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 16px; margin-top: 16px;">
+                    <div style="flex: 1; background: rgba(250, 243, 225, 0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">STREAK</div>
+                        <div style="font-size: 1.4rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${streak} <span style="font-size: 0.8rem;">🔥</span></div>
+                    </div>
+                    <div style="flex: 1; background: rgba(250, 243, 225, 0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 4px;">${monthStrStr.split(' ')[0].toUpperCase()}</div>
+                        <div style="font-size: 1.4rem; font-family: 'Unbounded', sans-serif; font-weight: 600;">${pctThisMonth}%</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Unbounded', sans-serif; margin-bottom: 8px;">LAST 30 DAYS</div>
+                    ${heatmapHTML}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+            <h2 style="font-size: 2.2rem; margin-bottom: 0;">Habit Tracker</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: var(--spacing-lg);">Consistency is the key to mastery.</p>
+        
+        <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <div class="input-group" style="margin-bottom: var(--spacing-md);">
+                <input type="text" id="new-habit-input" placeholder="Enter a new habit to track..." onkeypress="handleEnter(event, addHabit)">
+                <button onclick="addHabit()">Add Habit</button>
+            </div>
+            
+            <h3 style="color: var(--text-muted); font-size: 0.9rem; letter-spacing: 0.05em; margin-bottom: 16px;">Today's Checklist</h3>
+            <div id="habit-today-list">
+                ${todayCheckboxesHTML}
+            </div>
+        </div>
+        
+        <div id="habit-cards-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-md);">
+            ${habitCardsHTML}
+        </div>
+    `;
+    
+    setupDragAndDrop('habit-cards-list', 'habit', '.card');
+}
+
 function renderAnalytics(container) {
     const dailyTasks = StorageManager.getDailyTasks();
     const weeklyGoals = StorageManager.getWeeklyGoals();
@@ -901,6 +1011,19 @@ function addWeeklyGoal() {
     navigate(currentViewId);
 }
 
+function addHabit() {
+    const input = document.getElementById('new-habit-input');
+    if (!input || !input.value.trim()) return;
+    StorageManager.addHabit({ text: input.value.trim(), archived: false });
+    input.value = '';
+    navigate(currentViewId);
+}
+
+function toggleHabitDay(habitId, dateStr, completed) {
+    StorageManager.toggleHabitDay(habitId, dateStr, completed);
+    navigate(currentViewId);
+}
+
 function addMonthlyGoal() {
     const input = document.getElementById('new-monthly-input');
     if (!input || !input.value.trim()) return;
@@ -943,14 +1066,14 @@ function addReflectionItem() {
 }
 
 function toggleItem(type, id, completed) {
-    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
+    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY, 'habit': StorageKeys.HABIT };
     StorageManager.updateItem(keyMap[type], id, { completed });
     navigate(currentViewId);
 }
 
 function deleteItem(e, type, id) {
     e.stopPropagation();
-    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
+    const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY, 'habit': StorageKeys.HABIT };
     // Archive it instead of rigidly destroying it, so it securely maps to our heatmap and analytics 
     StorageManager.updateItem(keyMap[type], id, { archived: true });
     navigate(currentViewId);
@@ -993,7 +1116,7 @@ function setupDragAndDrop(containerId, type, itemSelector = '.list-item') {
         const itemEls = Array.from(list.querySelectorAll(itemSelector));
         const newOrderIds = itemEls.map(element => element.dataset.id).filter(Boolean);
 
-        const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY };
+        const keyMap = { 'daily': StorageKeys.DAILY, 'weekly': StorageKeys.WEEKLY, 'monthly': StorageKeys.MONTHLY, 'yearly': StorageKeys.YEARLY, 'habit': StorageKeys.HABIT };
         StorageManager.reorderItems(keyMap[type], newOrderIds);
     });
 

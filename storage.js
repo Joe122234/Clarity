@@ -5,7 +5,8 @@ const StorageKeys = {
     WEEKLY: 'clarity_weekly_goals',
     DAILY: 'clarity_daily_tasks',
     YEARLY: 'clarity_yearly_goals',
-    REFLECTION: 'clarity_reflections'
+    REFLECTION: 'clarity_reflections',
+    HABIT: 'clarity_habits'
 };
 
 const StorageManager = {
@@ -39,6 +40,7 @@ const StorageManager = {
     getYearlyGoals: function () { return this._get(StorageKeys.YEARLY); },
     getDailyTasks: function () { return this._get(StorageKeys.DAILY); },
     getReflections: function () { return this._get(StorageKeys.REFLECTION); },
+    getHabits: function () { return this._get(StorageKeys.HABIT); },
 
     // Add new items
     addMonthlyGoal: function (goalData) {
@@ -105,6 +107,30 @@ const StorageManager = {
         const newReflection = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...reflectionData };
         reflections.push(newReflection);
         return this._save(StorageKeys.REFLECTION, reflections) ? newReflection : null;
+    },
+
+    addHabit: function (habitData) {
+        const habits = this.getHabits();
+        const newHabit = { id: Date.now().toString(), createdAt: new Date().toISOString(), completedDates: [], ...habitData };
+        habits.push(newHabit);
+        return this._save(StorageKeys.HABIT, habits) ? newHabit : null;
+    },
+
+    toggleHabitDay: function (habitId, dateStr, completed) {
+        const habits = this.getHabits();
+        const idx = habits.findIndex(h => h.id === habitId);
+        if (idx === -1) return false;
+        
+        // Ensure completedDates is an array
+        let dates = habits[idx].completedDates || [];
+        if (completed && !dates.includes(dateStr)) {
+            dates.push(dateStr);
+        } else if (!completed) {
+            dates = dates.filter(d => d !== dateStr);
+        }
+        habits[idx].completedDates = dates;
+        habits[idx].updatedAt = new Date().toISOString();
+        return this._save(StorageKeys.HABIT, habits);
     },
 
     // Update existing items
